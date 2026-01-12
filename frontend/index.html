@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindMate - Your Mental Health Companion</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="landing-page" id="landingPage">
+        <div class="container">
+            <header class="header">
+                <div class="logo">
+                    <i class="fas fa-brain"></i>
+                    <h1>Mind<span class="mate">Mate</span></h1>
+                </div>
+                <p class="tagline">Your empathetic mental health companion</p>
+            </header>
+
+            <div class="quote-container">
+                <div class="quote-icon">
+                    <i class="fas fa-quote-left"></i>
+                </div>
+                <div class="quote-text" id="quoteText">
+                    Your mental health is a priority. Your happiness is essential.
+                </div>
+                <div class="quote-author" id="quoteAuthor">- MindMate</div>
+            </div>
+
+            <div class="features">
+                <h2>How MindMate Helps You</h2>
+                <div class="features-grid">
+                    <div class="feature">
+                        <i class="fas fa-heart"></i>
+                        <h3>12+ Emotions</h3>
+                        <p>Detects sadness, anxiety, stress, loneliness & more</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Safe Space</h3>
+                        <p>Your conversations are private and secure</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-comments"></i>
+                        <h3>24/7 Support</h3>
+                        <p>Always here when you need to talk</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="disclaimer">
+                <p><i class="fas fa-info-circle"></i> MindMate provides emotional support, not medical advice. For emergencies, contact 988.</p>
+            </div>
+        </div>
+
+        <button class="chat-button" id="chatButton">
+            <i class="fas fa-robot"></i>
+            <span class="pulse"></span>
+        </button>
+    </div>
+
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="chat-title">
+                <i class="fas fa-robot"></i>
+                <h3>MindMate</h3>
+                <div class="status" id="status">Online</div>
+            </div>
+            <button class="close-chat" id="closeChat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <p>Hello! I'm MindMate, your mental health companion. I can understand 12+ emotions and provide personalized support. How are you feeling today?</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input">
+            <div class="input-container">
+                <input type="text" id="userInput" placeholder="Share how you're feeling..." autocomplete="off">
+                <button id="sendButton">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="quick-replies">
+                <button class="quick-reply" data-message="I'm feeling anxious">😰 Anxious</button>
+                <button class="quick-reply" data-message="I'm feeling sad">😔 Sad</button>
+                <button class="quick-reply" data-message="I'm stressed out">😫 Stressed</button>
+                <button class="quick-reply" data-message="I'm feeling lonely">😟 Lonely</button>
+                <button class="quick-reply" data-message="I'm feeling happy">😊 Happy</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
