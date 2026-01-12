@@ -11,13 +11,40 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Allow Netlify frontend
-CORS(app, origins=[
-    "http://localhost:5000",
-    "http://localhost:8000",
-    "https://mindmate.netlify.app",
-    "https://*.netlify.app"
-])
+# CORS Configuration - ALLOW ALL ORIGINS for testing
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["*"],  # Allow all origins
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "Accept"],
+        "expose_headers": ["Content-Type"],
+        "supports_credentials": False,
+        "max_age": 3600
+    },
+    r"/health": {
+        "origins": ["*"],
+        "methods": ["GET", "OPTIONS"]
+    },
+    r"/": {
+        "origins": ["*"],
+        "methods": ["GET", "OPTIONS"]
+    }
+})
+
+# Alternative: Specific origins (use this for production)
+# CORS(app, origins=[
+#     "http://localhost:5000",
+#     "http://localhost:8000",
+#     "http://127.0.0.1:5500",  # VS Code Live Server
+#     "http://127.0.0.1:3000",
+#     "https://mindmate-chatbot-tc9l.onrender.com",
+#     "https://*.netlify.app",
+#     "https://*.vercel.app",
+#     "https://*.onrender.com",
+#     "http://localhost",  # Add all possible local URLs
+#     "http://127.0.0.1",
+#     "http://0.0.0.0",
+# ])
 
 emotion_detector = EmotionDetector()
 safety_layer = SafetyLayer()
@@ -51,8 +78,16 @@ quotes = [
     "It's okay to outgrow people who don't grow with you."
 ]
 
-@app.route('/api/chat', methods=['POST'])
+@app.route('/api/chat', methods=['POST', 'OPTIONS'])
 def chat():
+    if request.method == 'OPTIONS':
+        # Handle preflight request
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response, 200
+    
     try:
         data = request.json
         user_message = data.get('message', '').strip()
@@ -62,7 +97,7 @@ def chat():
                 'response': 'Please share how you\'re feeling.',
                 'emotion': 'neutral',
                 'is_crisis': False
-            })
+            }), 200
         
         safety_result = safety_layer.check_safety(user_message)
         if safety_result['is_crisis']:
@@ -70,7 +105,7 @@ def chat():
                 'response': f"I'm really concerned. Please reach out immediately: {' | '.join(safety_result['resources'])}",
                 'emotion': 'crisis',
                 'is_crisis': True
-            })
+            }), 200
         
         emotion = emotion_detector.detect_emotion(user_message)
         response = groq_handler.get_response(user_message, emotion)
@@ -79,7 +114,7 @@ def chat():
             'response': response,
             'emotion': emotion,
             'is_crisis': False
-        })
+        }), 200
         
     except Exception as e:
         print(f"Error in chat endpoint: {e}")
@@ -89,20 +124,36 @@ def chat():
             'is_crisis': False
         }), 500
 
-@app.route('/api/quotes', methods=['GET'])
+@app.route('/api/quotes', methods=['GET', 'OPTIONS'])
 def get_quotes():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
     return jsonify({'quotes': quotes})
 
-@app.route('/api/random-quote', methods=['GET'])
+@app.route('/api/random-quote', methods=['GET', 'OPTIONS'])
 def get_random_quote():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
     return jsonify({'quote': random.choice(quotes)})
 
-@app.route('/health', methods=['GET'])
+@app.route('/health', methods=['GET', 'OPTIONS'])
 def health():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
     return jsonify({'status': 'healthy', 'service': 'MindMate API', 'version': '1.0'})
 
-@app.route('/')
+@app.route('/', methods=['GET', 'OPTIONS'])
 def home():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
     return jsonify({
         'message': 'MindMate API is running',
         'endpoints': {
@@ -113,9 +164,18 @@ def home():
         'frontend_url': 'https://mindmate.netlify.app'
     })
 
+# Add CORS headers to all responses
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     print(f"🚀 Starting MindMate API on port {port}")
-    print(f"🌐 Frontend: https://mindmate.netlify.app")
+    print(f"🌐 CORS enabled for all origins")
     print(f"🔗 API Base: http://localhost:{port}")
     app.run(debug=False, host='0.0.0.0', port=port)
