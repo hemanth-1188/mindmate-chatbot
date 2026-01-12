@@ -1,5 +1,5 @@
 // Your Render backend URL - UPDATE THIS AFTER DEPLOYMENT
-const API_BASE_URL = 'https://your-render-backend.onrender.com'; // ← Change to your Render URL
+const API_BASE_URL = 'https://mindmate-chatbot-tc9l.onrender.com';
 let quoteInterval;
 
 const quoteText = document.getElementById('quoteText');
