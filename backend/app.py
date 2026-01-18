@@ -12,13 +12,8 @@ load_dotenv()
 app = Flask(__name__)
 
 # Allow all origins for development
-CORS(app, origins=[
-    "http://localhost:5000",
-    "http://localhost:8000",
-    "https://mindmate-chatbot-tc9l.onrender.com",
-    "https://*.netlify.app",
-    "https://*.vercel.app"
-])
+CORS(app, origins=['*'])
+
 
 emotion_detector = EmotionDetector()
 safety_layer = SafetyLayer()
