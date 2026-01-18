@@ -11,61 +11,66 @@
 <body>
     <div class="landing-page" id="landingPage">
         <div class="container">
+            <!-- Header -->
             <header class="header">
                 <div class="logo">
                     <i class="fas fa-brain"></i>
                     <h1>Mind<span class="mate">Mate</span></h1>
                 </div>
-                <p class="tagline">Your empathetic mental health companion</p>
+                <p class="tagline">Your empathetic multilingual mental health companion</p>
+                <div class="language-selector">
+                    <button class="lang-btn active" data-lang="english">English</button>
+                    <button class="lang-btn" data-lang="hinglish">Hinglish</button>
+                    <button class="lang-btn" data-lang="tanglish">Tanglish</button>
+                </div>
             </header>
 
-            <div class="quote-container">
-                <div class="quote-icon">
-                    <i class="fas fa-quote-left"></i>
-                </div>
-                <div class="quote-text" id="quoteText">
-                    Your mental health is a priority. Your happiness is essential.
-                </div>
-                <div class="quote-author" id="quoteAuthor">- MindMate</div>
-            </div>
-
+            <!-- Features Section -->
             <div class="features">
                 <h2>How MindMate Helps You</h2>
                 <div class="features-grid">
                     <div class="feature">
+                        <i class="fas fa-language"></i>
+                        <h3>Multilingual Support</h3>
+                        <p>Speak in English, Hinglish, or Tanglish. Get responses in your preferred language.</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-microphone"></i>
+                        <h3>Voice Support</h3>
+                        <p>Speak your feelings. Listen to responses. Hands-free emotional support.</p>
+                    </div>
+                    <div class="feature">
                         <i class="fas fa-heart"></i>
                         <h3>12+ Emotions</h3>
-                        <p>Detects sadness, anxiety, stress, loneliness & more</p>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-shield-alt"></i>
-                        <h3>Safe Space</h3>
-                        <p>Your conversations are private and secure</p>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-comments"></i>
-                        <h3>24/7 Support</h3>
-                        <p>Always here when you need to talk</p>
+                        <p>Advanced emotion detection for personalized support.</p>
                     </div>
                 </div>
             </div>
 
+            <!-- Disclaimer -->
             <div class="disclaimer">
                 <p><i class="fas fa-info-circle"></i> MindMate provides emotional support, not medical advice. For emergencies, contact 988.</p>
+                <p><i class="fas fa-volume-up"></i> Voice features require browser microphone permission.</p>
             </div>
         </div>
 
+        <!-- Chat Button -->
         <button class="chat-button" id="chatButton">
             <i class="fas fa-robot"></i>
             <span class="pulse"></span>
         </button>
     </div>
 
+    <!-- Chat Window -->
     <div class="chat-window" id="chatWindow">
         <div class="chat-header">
             <div class="chat-title">
                 <i class="fas fa-robot"></i>
                 <h3>MindMate</h3>
+                <div class="language-indicator">
+                    <span id="currentLang">English</span>
+                    <i class="fas fa-globe"></i>
+                </div>
                 <div class="status" id="status">Online</div>
             </div>
             <button class="close-chat" id="closeChat">
@@ -79,25 +84,72 @@
                     <i class="fas fa-robot"></i>
                 </div>
                 <div class="message-content">
-                    <p>Hello! I'm MindMate, your mental health companion. I can understand 12+ emotions and provide personalized support. How are you feeling today?</p>
+                    <p>Hello! I'm MindMate, your mental health companion. I understand English, Hinglish, and Tanglish. You can type or speak your feelings. How are you today?</p>
+                    <div class="message-actions">
+                        <button class="action-btn voice-play" data-message="Hello! I'm MindMate, your mental health companion. I understand English, Hinglish, and Tanglish. You can type or speak your feelings. How are you today?">
+                            <i class="fas fa-volume-up"></i> Listen
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="chat-input">
             <div class="input-container">
-                <input type="text" id="userInput" placeholder="Share how you're feeling..." autocomplete="off">
-                <button id="sendButton">
-                    <i class="fas fa-paper-plane"></i>
+                <div class="voice-controls">
+                    <button class="voice-btn" id="voiceInputBtn" title="Voice Input">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <div class="voice-status" id="voiceStatus">Click to speak</div>
+                </div>
+                
+                <input type="text" id="userInput" placeholder="Type or speak your feelings..." autocomplete="off">
+                
+                <div class="send-controls">
+                    <button class="voice-play-btn" id="playLastResponse" title="Listen to last response">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <button id="sendButton">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="quick-replies">
+                <button class="quick-reply" data-message="I'm feeling anxious">
+                    <i class="fas fa-hand-paper"></i> Anxious
+                </button>
+                <button class="quick-reply" data-message="मुझे तनाव हो रहा है / Stress aa raha hai">
+                    <i class="fas fa-hand-rock"></i> Stressed
+                </button>
+                <button class="quick-reply" data-message="மகிழ்ச்சியாக உள்ளேன் / I'm happy">
+                    <i class="fas fa-hand-peace"></i> Happy
+                </button>
+                <button class="quick-reply" data-message="मैं उदास हूं / I'm sad">
+                    <i class="fas fa-hand-holding-heart"></i> Sad
                 </button>
             </div>
-            <div class="quick-replies">
-                <button class="quick-reply" data-message="I'm feeling anxious">😰 Anxious</button>
-                <button class="quick-reply" data-message="I'm feeling sad">😔 Sad</button>
-                <button class="quick-reply" data-message="I'm stressed out">😫 Stressed</button>
-                <button class="quick-reply" data-message="I'm feeling lonely">😟 Lonely</button>
-                <button class="quick-reply" data-message="I'm feeling happy">😊 Happy</button>
+            
+            <div class="language-buttons">
+                <small>Respond in:</small>
+                <button class="lang-response-btn active" data-lang="english">English</button>
+                <button class="lang-response-btn" data-lang="hinglish">Hinglish</button>
+                <button class="lang-response-btn" data-lang="tanglish">Tanglish</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Voice Permission Modal -->
+    <div class="modal" id="voiceModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-microphone"></i> Microphone Access Needed</h3>
+            <p>MindMate needs microphone access for voice features. Please allow microphone permission when prompted.</p>
+            <button id="startVoice" class="modal-btn">
+                <i class="fas fa-check"></i> Enable Voice
+            </button>
+            <button id="skipVoice" class="modal-btn secondary">
+                <i class="fas fa-times"></i> Skip for Now
+            </button>
         </div>
     </div>
 

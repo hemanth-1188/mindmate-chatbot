@@ -1,7 +1,13 @@
-// Your Render backend URL - UPDATE THIS AFTER DEPLOYMENT
+// Your Render backend URL
 const API_BASE_URL = 'https://mindmate-chatbot-tc9l.onrender.com';
 let quoteInterval;
+let speechSynthesis = window.speechSynthesis;
+let recognition = null;
+let isListening = false;
+let selectedLanguage = 'english';
+let responseLanguage = 'english';
 
+// DOM Elements
 const quoteText = document.getElementById('quoteText');
 const quoteAuthor = document.getElementById('quoteAuthor');
 const chatButton = document.getElementById('chatButton');
@@ -10,85 +16,232 @@ const closeChat = document.getElementById('closeChat');
 const userInput = document.getElementById('userInput');
 const sendButton = document.getElementById('sendButton');
 const chatMessages = document.getElementById('chatMessages');
+const voiceInputBtn = document.getElementById('voiceInputBtn');
+const voiceStatus = document.getElementById('voiceStatus');
+const playLastResponse = document.getElementById('playLastResponse');
+const voiceModal = document.getElementById('voiceModal');
+const startVoice = document.getElementById('startVoice');
+const skipVoice = document.getElementById('skipVoice');
+const currentLang = document.getElementById('currentLang');
+const langButtons = document.querySelectorAll('.lang-btn');
+const langResponseButtons = document.querySelectorAll('.lang-response-btn');
 
-const fallbackQuotes = [
-    { text: "You are stronger than you seem, braver than you believe, and smarter than you think.", author: "A.A. Milne" },
-    { text: "Your mental health is a priority. Your happiness is essential.", author: "MindMate" },
-    { text: "Healing is not linear. Be patient with your progress.", author: "Unknown" },
-    { text: "It's okay not to be okay. What matters is that you don't give up.", author: "Unknown" },
-    { text: "Taking care of your mind is as important as taking care of your body.", author: "Unknown" }
-];
+// Language configurations
+const languageConfig = {
+    english: {
+        name: 'English',
+        greetings: ['Hello', 'Hi there', 'Hey'],
+        placeholder: 'Type or speak your feelings...',
+        voiceStatus: 'Click to speak'
+    },
+    hinglish: {
+        name: 'Hinglish',
+        greetings: ['Namaste', 'Hello ji', 'Kaise ho?'],
+        placeholder: 'Type karo ya bolo... अपनी feelings share karo',
+        voiceStatus: 'Bolnे के लिए click karo'
+    },
+    tanglish: {
+        name: 'Tanglish',
+        greetings: ['Vanakkam', 'Hello', 'Eppadi irukeenga?'],
+        placeholder: 'Type pannunga ya pesunga... ungal feelings share pannunga',
+        voiceStatus: 'Pesalam click pannunga'
+    }
+};
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadQuotes();
-    startQuoteRotation();
     setupEventListeners();
+    checkVoiceSupport();
+    updateLanguageUI();
 });
 
-async function loadQuotes() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/quotes`);
-        if (response.ok) {
-            const data = await response.json();
-            if (data.quotes && data.quotes.length > 0) {
-                window.quotes = data.quotes.map(q => ({
-                    text: q,
-                    author: "MindMate"
-                }));
-            }
-        }
-    } catch (error) {
-        console.log("Using fallback quotes");
-        window.quotes = fallbackQuotes;
-    }
-}
-
-function startQuoteRotation() {
-    if (!window.quotes) window.quotes = fallbackQuotes;
-    updateQuote();
-    quoteInterval = setInterval(updateQuote, 6000);
-}
-
-function updateQuote() {
-    if (!window.quotes || window.quotes.length === 0) return;
-    
-    const randomIndex = Math.floor(Math.random() * window.quotes.length);
-    const quote = window.quotes[randomIndex];
-    
-    quoteText.style.opacity = '0';
-    quoteAuthor.style.opacity = '0';
-    
-    setTimeout(() => {
-        quoteText.textContent = quote.text;
-        quoteAuthor.textContent = `- ${quote.author}`;
-        quoteText.style.opacity = '1';
-        quoteAuthor.style.opacity = '1';
-    }, 500);
-}
-
 function setupEventListeners() {
+    // Chat button
     chatButton.addEventListener('click', () => {
         chatWindow.classList.add('active');
         chatButton.style.display = 'none';
+        showVoiceModal();
     });
     
+    // Close chat
     closeChat.addEventListener('click', () => {
         chatWindow.classList.remove('active');
         chatButton.style.display = 'flex';
+        stopListening();
     });
     
+    // Send message
     sendButton.addEventListener('click', sendMessage);
     userInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
     
+    // Voice input
+    voiceInputBtn.addEventListener('click', toggleVoiceInput);
+    
+    // Play last response
+    playLastResponse.addEventListener('click', () => {
+        const lastBotMessage = document.querySelector('.message.bot:last-child .message-content p');
+        if (lastBotMessage) {
+            speakText(lastBotMessage.textContent);
+        }
+    });
+    
+    // Voice modal
+    startVoice.addEventListener('click', initVoiceRecognition);
+    skipVoice.addEventListener('click', () => {
+        voiceModal.classList.remove('active');
+    });
+    
+    // Language selection
+    langButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            langButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedLanguage = btn.dataset.lang;
+            currentLang.textContent = languageConfig[selectedLanguage].name;
+            updatePlaceholder();
+        });
+    });
+    
+    // Response language
+    langResponseButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            langResponseButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            responseLanguage = btn.dataset.lang;
+        });
+    });
+    
+    // Quick replies
     document.querySelectorAll('.quick-reply').forEach(button => {
         button.addEventListener('click', (e) => {
-            const message = e.target.dataset.message;
+            const message = e.target.closest('.quick-reply').dataset.message;
             userInput.value = message;
             sendMessage();
         });
     });
+    
+    // Voice play buttons in messages
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.voice-play')) {
+            const btn = e.target.closest('.voice-play');
+            const message = btn.dataset.message;
+            speakText(message);
+        }
+    });
+}
+
+function checkVoiceSupport() {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+        voiceInputBtn.style.display = 'none';
+        voiceStatus.textContent = 'Voice not supported';
+    }
+    
+    if (!speechSynthesis) {
+        document.querySelectorAll('.voice-play, .voice-play-btn').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+}
+
+function showVoiceModal() {
+    if (!localStorage.getItem('voiceSkipped') && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+        setTimeout(() => {
+            voiceModal.classList.add('active');
+        }, 1000);
+    }
+}
+
+function initVoiceRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = getSpeechLang();
+    
+    recognition.onstart = () => {
+        isListening = true;
+        voiceInputBtn.classList.add('listening');
+        voiceStatus.textContent = 'Listening...';
+    };
+    
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript;
+        isListening = false;
+        voiceInputBtn.classList.remove('listening');
+        voiceStatus.textContent = languageConfig[selectedLanguage].voiceStatus;
+        
+        // Auto-send if message is long enough
+        if (transcript.length > 3) {
+            setTimeout(() => sendMessage(), 500);
+        }
+    };
+    
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        isListening = false;
+        voiceInputBtn.classList.remove('listening');
+        voiceStatus.textContent = 'Error: ' + event.error;
+        setTimeout(() => {
+            voiceStatus.textContent = languageConfig[selectedLanguage].voiceStatus;
+        }, 2000);
+    };
+    
+    recognition.onend = () => {
+        isListening = false;
+        voiceInputBtn.classList.remove('listening');
+        voiceStatus.textContent = languageConfig[selectedLanguage].voiceStatus;
+    };
+    
+    voiceModal.classList.remove('active');
+    localStorage.setItem('voiceSkipped', 'true');
+}
+
+function toggleVoiceInput() {
+    if (!recognition) {
+        initVoiceRecognition();
+    }
+    
+    if (isListening) {
+        stopListening();
+    } else {
+        startListening();
+    }
+}
+
+function startListening() {
+    if (recognition) {
+        recognition.start();
+    }
+}
+
+function stopListening() {
+    if (recognition && isListening) {
+        recognition.stop();
+        isListening = false;
+        voiceInputBtn.classList.remove('listening');
+        voiceStatus.textContent = languageConfig[selectedLanguage].voiceStatus;
+    }
+}
+
+function getSpeechLang() {
+    switch(selectedLanguage) {
+        case 'hinglish': return 'hi-IN';
+        case 'tanglish': return 'ta-IN';
+        default: return 'en-US';
+    }
+}
+
+function updateLanguageUI() {
+    currentLang.textContent = languageConfig[selectedLanguage].name;
+    updatePlaceholder();
+}
+
+function updatePlaceholder() {
+    userInput.placeholder = languageConfig[selectedLanguage].placeholder;
+    voiceStatus.textContent = languageConfig[selectedLanguage].voiceStatus;
 }
 
 async function sendMessage() {
@@ -105,15 +258,23 @@ async function sendMessage() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: message })
+            body: JSON.stringify({
+                message: message,
+                language: selectedLanguage,
+                response_language: responseLanguage
+            })
         });
         
         const data = await response.json();
         removeTypingIndicator();
         
-        const emoji = getEmojiForEmotion(data.emotion);
-        addMessage(data.response, 'bot', emoji);
+        addMessage(data.response, 'bot', data.emotion, true);
         scrollToBottom();
+        
+        // Auto-speak response if voice is enabled
+        if (localStorage.getItem('voiceEnabled') === 'true') {
+            setTimeout(() => speakText(data.response), 500);
+        }
         
     } catch (error) {
         console.error('Error:', error);
@@ -122,7 +283,7 @@ async function sendMessage() {
     }
 }
 
-function addMessage(text, sender, emotionEmoji = '') {
+function addMessage(text, sender, emotion = '', hasVoice = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${sender}`;
     
@@ -139,18 +300,65 @@ function addMessage(text, sender, emotionEmoji = '') {
     textP.textContent = text;
     contentDiv.appendChild(textP);
     
-    if (sender === 'bot' && emotionEmoji) {
-        const emotionSpan = document.createElement('span');
-        emotionSpan.className = 'emotion-tag';
-        emotionSpan.textContent = ` ${emotionEmoji}`;
-        emotionSpan.style.cssText = 'margin-left: 10px; font-size: 0.9em;';
-        contentDiv.appendChild(emotionSpan);
+    if (sender === 'bot') {
+        // Add emotion emoji
+        if (emotion) {
+            const emoji = getEmojiForEmotion(emotion);
+            const emotionSpan = document.createElement('span');
+            emotionSpan.className = 'emotion-tag';
+            emotionSpan.textContent = ` ${emoji}`;
+            emotionSpan.style.cssText = 'margin-left: 10px; font-size: 0.9em;';
+            contentDiv.appendChild(emotionSpan);
+        }
+        
+        // Add voice play button
+        if (hasVoice && speechSynthesis) {
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+            
+            const voiceBtn = document.createElement('button');
+            voiceBtn.className = 'action-btn voice-play';
+            voiceBtn.dataset.message = text;
+            voiceBtn.innerHTML = '<i class="fas fa-volume-up"></i> Listen';
+            
+            actionsDiv.appendChild(voiceBtn);
+            contentDiv.appendChild(actionsDiv);
+        }
     }
     
     messageDiv.appendChild(avatarDiv);
     messageDiv.appendChild(contentDiv);
     chatMessages.appendChild(messageDiv);
     scrollToBottom();
+}
+
+function speakText(text) {
+    if (!speechSynthesis) return;
+    
+    // Stop any ongoing speech
+    speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Set language based on response
+    switch(responseLanguage) {
+        case 'hinglish':
+            utterance.lang = 'hi-IN';
+            utterance.rate = 0.9;
+            break;
+        case 'tanglish':
+            utterance.lang = 'ta-IN';
+            utterance.rate = 0.9;
+            break;
+        default:
+            utterance.lang = 'en-US';
+            utterance.rate = 1.0;
+    }
+    
+    utterance.volume = 1;
+    utterance.pitch = 1;
+    
+    speechSynthesis.speak(utterance);
 }
 
 function showTypingIndicator() {
