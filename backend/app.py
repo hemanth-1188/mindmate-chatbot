@@ -12,7 +12,8 @@ load_dotenv()
 app = Flask(__name__)
 
 # Allow all origins for development
-CORS(app, origins=['*'])
+# Allow all origins temporarily
+CORS(app, origins=["*"])
 
 
 emotion_detector = EmotionDetector()
